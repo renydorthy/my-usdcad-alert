@@ -1,1 +1,36 @@
+name: USD/CAD Rate Monitor
 
+on:
+  schedule:
+    # Runs Monday to Friday at 21:30 UTC (5:30 PM Eastern Time / 4:30 PM BoC publish time)
+    - cron: '30 21 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI for easy testing
+
+jobs:
+  check-rate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run USD/CAD check
+        env:
+          # Pass secrets as environment variables to the script
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ALERT_RECIPIENT: ${{ secrets.ALERT_RECIPIENT }}
+        run: python usdcad_alert.py
